@@ -1,0 +1,366 @@
+---
+title: "Cardiovascular Disease Forecast Using Machine Learning Methods"
+author: "Minyang Xu, Yuhong Zhao"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Import data
+```{r}
+setwd("/Users/minyangmaxims_xu/Library/CloudStorage/GoogleDrive-mx2269@nyu.edu/My Drive/2024 Spring/GU2338/Final Project")
+data <- read.csv("Cardiovascular_Disease_Dataset.csv")
+data <- subset(data, select = -patientid)
+```
+
+
+```{r}
+names(data)
+dim(data)
+```
+
+# Split data
+```{r}
+prop = 0.7
+num_row <- nrow(data)
+set.seed(123)
+train_index <- sample(x = 1:num_row,
+                      size = floor(prop*num_row),
+                      replace = F)
+
+train_data <- data[train_index, ]
+test_data <- data[-train_index, ]
+
+```
+
+# Univariable Analysis
+```{r}
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(gridExtra)
+categorical <- sapply(data, function(x) length(unique(x)) < 10)
+plot_list <- list()
+for (feature in names(data)) {
+  if (categorical[feature]) {
+    p <- ggplot(data, aes_string(x = feature)) +
+      geom_bar(fill = "steelblue") +
+      labs(x = feature, y = "Count") +
+      theme_minimal()
+  } else {
+    p <- ggplot(data, aes_string(x = feature)) +
+      geom_histogram(bins = 30, fill = "gray", color = "black") +
+      labs(x = feature, y = "Count") +
+      theme_minimal()
+  }
+  plot_list[[feature]] <- p
+}
+num_plots <- length(plot_list)
+num_columns <- 4
+num_rows <- ceiling(num_plots / num_columns)
+grid.arrange(grobs = plot_list, nrow = num_rows, ncol = num_columns)
+```
+
+age
+```{r}
+library(ggplot2)
+boxplot(data$age, main = "Boxplot of Age", ylab = "Age",col = "purple",fill = "lightblue" )
+ggplot(data, aes(x = factor(0), y = age)) + 
+  geom_boxplot() +
+  xlab('') +
+  ylab('Age') + 
+  ggtitle('Boxplot of Age')
+```
+
+gender
+```{r}
+gender_counts <- table(data$gender)
+names(gender_counts) <- c("Female", "Male")
+pie(gender_counts, 
+    main = "Pie Chart of Gender Distribution", 
+    col = c("blue", "red")
+)
+legend("topright", 
+       legend = c("Female", "Male"), 
+       fill = c("blue", "red"), 
+       cex = 0.8
+)
+```
+chestpain
+```{r}
+chestpain_counts <- table(data$chestpain)
+
+barplot(chestpain_counts, 
+        main = "Barplot of Chestpain", 
+        xlab = "Chestpain", 
+        ylab = "Count",
+        col = "purple"
+)
+```
+
+resting BP
+```{r}
+ggplot(data, aes(x = restingBP)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Resting Blood Pressure", x = "Resting BP") +
+  theme_minimal()
+```
+serumcholestrol
+```{r}
+zero_count <- sum(data$serumcholestrol == 0)
+zero_count
+
+non_zero_values <- data$serumcholestrol[data$serumcholestrol != 0]
+hist(non_zero_values, 
+     breaks = 10,           
+     main = "Histogram of Serum Cholesterol (Excluding Zero Values)", 
+     xlab = "Serum Cholesterol", 
+     col = "blue"     
+)
+```
+fastingbloodsugar
+```{r}
+FBS_counts <- table(data$fastingbloodsugar)
+names(FBS_counts) <- c("Larger than or Equal 120 mg/dl", "Less than 120 mg/dl")
+pie(FBS_counts, 
+    main = "Pie Chart of Fasting Blood Sugar", 
+    col = c("blue", "red")
+)
+legend("topright", 
+       legend = names(FBS_counts), 
+       fill = c("blue", "red"), 
+       cex = 0.8
+)
+```
+restingrelectro
+```{r}
+RR_counts <- table(data$restingrelectro)
+
+pie(RR_counts, 
+    main = "Pie Chart of Resting Relectro", 
+    col = c("blue", "red","yellow")
+)
+legend("topright", 
+       legend = names(RR_counts), 
+       fill = c("blue", "red","yellow"), 
+       cex = 0.8
+)
+```
+maxheartrate
+```{r}
+ggplot(data, aes(x = maxheartrate)) +
+  geom_density(fill = "red", alpha = 0.5) +
+  labs(title = "Density Plot of Max Heart Rate", x = "Max Heart Rate") +
+  theme_minimal()
+```
+Exerciseangia
+```{r}
+exerciseangia_counts <- table(data$exerciseangia)
+names(exerciseangia_counts) <- c("No", "Yes")
+pie(exerciseangia_counts, 
+    main = "Pie Chart of Exercise Angina Distribution", 
+    col = c("blue", "red"),
+    labels = paste(names(exerciseangia_counts), "has", exerciseangia_counts)
+)
+legend("topright", 
+       legend = names(exerciseangia_counts), 
+       fill = c("blue", "red"), 
+       cex = 0.8
+)
+
+```
+oldpeak
+```{r}
+boxplot(data$oldpeak, 
+        main = "Boxplot of Oldpeak", 
+        ylab = "Oldpeak",
+        col = "blue",   
+        fill = "lightblue"    
+)
+```
+slope
+```{r}
+slope_counts <- table(data$slope)
+
+barplot(slope_counts, 
+        main = "Barplot of Slope", 
+        xlab = "Slope", 
+        ylab = "Count",
+        col = "red"     
+)
+```
+noofmajorvessels
+```{r}
+NMV_counts <- table(data$noofmajorvessels)
+
+barplot(slope_counts, 
+        main = "Barplot of NMV", 
+        xlab = "NMV", 
+        ylab = "Count",
+        col = "blue"     
+)
+```
+target
+```{r}
+target_counts <- table(data$target)
+
+pie(target_counts, 
+    main = "Pie Chart of Target", 
+    col = c("blue", "red"),
+    labels = paste(names(target_counts), "is", target_counts)
+)
+legend("topright", 
+       legend = names(target_counts), 
+       fill = c("blue", "red"), 
+       cex = 0.8
+)
+```
+
+# Bivariate Analysis
+```{r}
+library(GGally)
+correlation_matrix <- cor(data, use = "complete.obs")
+
+# Create the correlation dot plot
+dot_plot <- ggcorr(correlation_matrix, label = TRUE)
+
+# You can adjust the text size by modifying the label_size parameter inside the ggcorr function
+dot_plot <- ggcorr(correlation_matrix, label = TRUE, label_size = 3)
+dot_plot
+```
+
+
+# Logistic Regression
+```{r}
+logistic_fit <- glm(target ~., data = train_data, family = "binomial")
+summary(logistic_fit)
+```
+## Training Error
+```{r}
+logistic_pred_train_prob <- predict(logistic_fit, type = "response")
+logistic_pred_train_label <- ifelse(logistic_pred_train_prob > 0.5, 1, 0)
+table(logistic_pred_train_label, train_data$target)
+mean(logistic_pred_train_label != train_data$target)
+```
+## Test Error
+```{r}
+logistic_pred_test_prob <- predict(logistic_fit,newdata = test_data, type = "response")
+logistic_pred_test_label <- ifelse(logistic_pred_test_prob > 0.5, 1, 0)
+table(logistic_pred_test_label, test_data$target)
+mean(logistic_pred_test_label != test_data$target)
+```
+## ROC
+```{r}
+library(pROC)
+roc(test_data$target, logistic_pred_test_prob)
+plot(roc(test_data$target, logistic_pred_test_prob), main = "ROC Curve of Logistic Regression")
+auc(roc(test_data$target, logistic_pred_test_prob))
+```
+## Stepwise Selection
+```{r}
+step(logistic_fit)
+```
+
+
+## Logistic Best Model
+```{r}
+logistic_fit_reduced <- glm(target ~ gender + chestpain + restingBP + restingrelectro + oldpeak + slope + fastingbloodsugar, data = train_data, family = "binomial")
+summary(logistic_fit_reduced)
+```
+## Training error for Best Model
+```{r}
+logistic_pred_train_prob_reduced <- predict(logistic_fit_reduced, type = "response")
+logistic_pred_train_label_reduced <- ifelse(logistic_pred_train_prob_reduced > 0.5, 1, 0)
+table(logistic_pred_train_label_reduced, train_data$target)
+mean(logistic_pred_train_label_reduced != train_data$target)
+```
+## Test Error for Best Model
+```{r}
+logistic_pred_test_prob_reduced <- predict(logistic_fit_reduced,newdata = test_data, type = "response")
+logistic_pred_test_label_reduced <- ifelse(logistic_pred_test_prob_reduced > 0.5, 1, 0)
+table(logistic_pred_test_label_reduced, test_data$target)
+mean(logistic_pred_test_label_reduced != test_data$target)
+logistic_error <- data.frame(train_error = c(mean(logistic_pred_train_label_reduced != train_data$target)), test_error = mean(logistic_pred_test_label_reduced != test_data$target))
+logistic_error
+```
+## ROC for Best Model
+```{r}
+library(pROC)
+roc(test_data$target, logistic_pred_test_prob_reduced)
+plot(roc(test_data$target, logistic_pred_test_prob_reduced), main = "ROC Curve of Logistic Regression")
+auc(roc(test_data$target, logistic_pred_test_prob_reduced))
+```
+
+
+
+# K Nearest Neighborhood
+## CV fold
+```{r}
+library(caret)
+library(ISLR)
+K <- 5
+n_all <- nrow(data)
+fold_ind <- sample(1:K, n_all, replace = TRUE)
+K_seq <- seq(from = 1, to = 100, by = 5)
+CV_error_seq <- sapply(K_seq, function(K_cur){
+  mean(sapply(1:K, function(j){
+ fit_knn <- knn3(factor(target) ~ ., data = train_data, k = K_cur)
+ pred_knn <- predict(fit_knn, newdata = test_data, type = "class")
+ mean(pred_knn != test_data$target)
+}))
+})
+CV_error_seq
+```
+## Best K for 21
+since knn is based on the distance between points, so the variable is not influential to the result, we just use the whole model to make the classification
+```{r}
+fit_knn <- knn3(factor(target) ~ . , data = train_data, k = 21)
+fit_knn
+pred_knn <- predict(fit_knn, newdata = train_data, type = "class")
+mean(pred_knn != train_data$target)
+pred_knn <- predict(fit_knn, newdata = test_data, type = "class")
+mean(pred_knn != test_data$target)
+```
+
+
+
+# Random forest
+```{r}
+library(MASS)
+library(tree)
+library(randomForest)
+set.seed(1)
+p <- ncol(data)-1
+rf <- randomForest(factor(target) ~ ., data = train_data, importance=TRUE)
+rf
+
+yhat.rf_tr <- predict(rf,newdata=train_data)
+yhat.rf_te <- predict(rf,newdata=test_data)
+
+mean(yhat.rf_tr != train_data$target)
+mean(yhat.rf_te != test_data$target)
+
+importance(rf)
+varImpPlot(rf)
+```
+
+# Boosting
+
+```{r}
+library(gbm)
+set.seed(123)
+boosting_fit <- gbm(target ~ .,data = train_data, n.trees = 500,distribution = "bernoulli", interaction.depth = 4,shrinkage = 0.01)
+summary(boosting_fit)
+
+yhat.boost <- predict(boosting_fit, newdata = test_data, n.trees = 500)
+mean((yhat.boost - test_data$target)^2)
+yhat.boost1 <- predict(boosting_fit, data = train_data, n.trees = 500)
+mean((yhat.boost1 - train_data$target)^2)
+roc(test_data$target, yhat.boost)
+plot(roc(test_data$target, yhat.boost))
+boosting_error <- data.frame(training_error = mean((yhat.boost1 - train_data$target)^2), test_error = mean((yhat.boost - test_data$target)^2))
+boosting_error
+```
+
